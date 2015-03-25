@@ -1,5 +1,5 @@
-# Muzei Google Art Project
-**Muzei Google Art Project** is an artwork source for [muzei](http://muzei.co) that displays random pictures from [Google Art Project](https://www.google.com/culturalinstitute/u/0/project/art-project?hl=it).
+# Muzei - Google Art Project
+**Muzei - Google Art Project** is an extension for [muzei](http://muzei.co) that displays random pictures from [Google Art Project](https://www.google.com/culturalinstitute/u/0/project/art-project?hl=it).
 
 <a href="https://play.google.com/store/apps/details?id=com.manuelmazzuola.muzeigoogleartproject">
   <img alt="Get it on Google Play"
