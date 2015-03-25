@@ -1,4 +1,4 @@
-# muzei-google-art-project
+# Muzei Google Art Project
 **Muzei Google Art Project Source** is an artwork source for [muzei](http://muzei.co) that displays random pictures from [Google Art Project](https://www.google.com/culturalinstitute/u/0/project/art-project?hl=it).
 
 ![Icon](http://i.picresize.com/images/2015/03/25/xDnmC.png)
