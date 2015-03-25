@@ -1,8 +1,7 @@
-# Muzei Google Art Project
+# Muzei Google Art Project (Soon on play store)
 **Muzei Google Art Project** is an artwork source for [muzei](http://muzei.co) that displays random pictures from [Google Art Project](https://www.google.com/culturalinstitute/u/0/project/art-project?hl=it).
 
 ![Icon](http://i.picresize.com/images/2015/03/25/xDnmC.png)
-
 
 ## How
 *Google Art Project* does not provide an `API` so I've reverse engineered the [Google Art Project Chrome Extension](https://chrome.google.com/webstore/detail/google-art-project/akimgimeeoiognljlfchpbkpfbmeapkh).
