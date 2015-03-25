@@ -9,7 +9,9 @@
 
 I've discovered that the extension picks a random masterpiece from a [json file](https://github.com/manuelmazzuola/muzei-google-art-project/blob/master/app/src/main/assets/imax.json) that contains an array of objects. Each object contains the masterpiece's informations like the title, author, image url, etc.
 
-The only problem I had was with the resolution of the images. Each url in the json file links to a low resolution image, but the `Google Art Project` extension displays a high resolution image.
+
+## The magic
+The only problem I had was with the resolution of the images. Each url in the json points to a low resolution image, but the `Google Art Project` extension displays high resolution images.
 
 So, with the help of [Wireshark](https://www.wireshark.org/about.html) I've discovered that the `GAP` extension appends the string `=1200-rw` to each url, in this way the url points to an image at most large 1200px.
 
