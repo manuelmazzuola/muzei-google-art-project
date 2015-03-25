@@ -28,3 +28,6 @@ proguard/
 
 # Log Files
 *.log
+
+# My logos dir
+res/
