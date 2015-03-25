@@ -13,7 +13,7 @@ I've discovered that the extension picks a random masterpiece from a [json file]
 
 
 ## The magic
-The only problem I had was with the resolution of the images. Each url in the json points to a low resolution image, but the `Google Art Project` extension displays high resolution images.
+The only problem I had was with the resolution of the images. Each url in the json points to a low resolution image, but the `Google Art Project Chrome Extension` displays high resolution images.
 
 So, with the help of [Wireshark](https://www.wireshark.org/about.html) I've discovered that the `GAP` extension appends the string `=1200-rw` to each url, in this way the url points to an image at most large 1200px.
 
