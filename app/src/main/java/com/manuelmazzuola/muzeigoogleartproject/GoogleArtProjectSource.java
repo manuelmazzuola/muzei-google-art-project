@@ -22,6 +22,8 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
     private static final String SOURCE_NAME = "GoogleArtProjectSource";
     private static final String SOURCE_JSON = "imax.json";
 
+    private static final int ROTATE_TIME_MILLIS = 6 * 60 * 60 * 1000; // 6 hours
+
     public GoogleArtProjectSource() {
         super(SOURCE_NAME);
     }
@@ -68,6 +70,8 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
             Log.e(TAG, ex.getMessage());
             throw new RetryException(ex.getCause());
         }
+
+        scheduleUpdate(System.currentTimeMillis() + ROTATE_TIME_MILLIS);
     }
 
     // http://stackoverflow.com/questions/13814503/reading-a-json-file-in-android/13814551#13814551
