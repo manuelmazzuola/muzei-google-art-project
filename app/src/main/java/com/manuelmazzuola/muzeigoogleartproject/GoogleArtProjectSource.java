@@ -2,6 +2,7 @@ package com.manuelmazzuola.muzeigoogleartproject;
 
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
@@ -15,12 +16,15 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 
 public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
     private static final String TAG = "MuzeiGoogleArtProject";
     private static final String SOURCE_NAME = "GoogleArtProjectSource";
     private static final String SOURCE_JSON = "imax.json";
+    private static final String OLD_IMAGES_KEY = "MuzeiOldImages";
 
     private static final int ROTATE_TIME_MILLIS = 6 * 60 * 60 * 1000; // 6 hours
 
@@ -44,8 +48,22 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         JSONArray arts = loadJSONFromAsset(SOURCE_JSON);
         if(arts == null) return;
 
+        // Retrieve old images to be excluded
+        SharedPreferences sharedPref = getSharedPreferences(TAG, 0);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        Set<String> oldIndexes = sharedPref.getStringSet(OLD_IMAGES_KEY, new HashSet<String>());
+
+        if(oldIndexes.size() > (arts.length() / 2)) {
+            editor.remove(OLD_IMAGES_KEY);
+            oldIndexes = new HashSet<String>();
+            Log.d(TAG, "Cleaned old images set");
+        }
+
         Random r = new Random();
-        int i1 = r.nextInt(arts.length());
+        int i1 = getRandomWithExclusion(
+                r,
+                arts.length(),
+                oldIndexes);
 
         JSONObject randomArt;
         try {
@@ -66,6 +84,11 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
                     .viewIntent(new Intent(Intent.ACTION_VIEW,
                             Uri.parse("https://www.google.com/culturalinstitute/u/0/" + randomArt.getString("link"))))
                     .build());
+
+            // Save the json position of the selected image
+            oldIndexes.add(Integer.toString(i1));
+            editor.putStringSet(OLD_IMAGES_KEY, oldIndexes);
+            editor.commit();
         } catch (JSONException ex) {
             Log.e(TAG, ex.getMessage());
             throw new RetryException(ex.getCause());
@@ -93,6 +116,17 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
             return null;
         }
 
+    }
+
+    private int getRandomWithExclusion(Random rnd, int max, Set<String> exclude) {
+        int random = rnd.nextInt(max - exclude.size());
+        for (String ex : exclude) {
+            if (random < Integer.parseInt(ex)) {
+                break;
+            }
+            random++;
+        }
+        return random;
     }
 
 }
