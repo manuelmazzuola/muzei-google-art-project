@@ -88,7 +88,7 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
             // Save the json position of the selected image
             oldIndexes.add(Integer.toString(i1));
             editor.putStringSet(OLD_IMAGES_KEY, oldIndexes);
-            editor.commit();
+            editor.apply();
         } catch (JSONException ex) {
             Log.e(TAG, ex.getMessage());
             throw new RetryException(ex.getCause());
