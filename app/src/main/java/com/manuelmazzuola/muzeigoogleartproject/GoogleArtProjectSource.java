@@ -54,7 +54,6 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         Set<String> oldIndexes = sharedPref.getStringSet(OLD_IMAGES_KEY, new HashSet<String>());
 
         if(oldIndexes.size() > (arts.length() / 2)) {
-            editor.remove(OLD_IMAGES_KEY);
             oldIndexes = new HashSet<String>();
             Log.d(TAG, "Cleaned old images set");
         }
