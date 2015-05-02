@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">Muzei Google Art Project</string>
+
+    <string-array name="pref_delay_display">
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>12 hours</item>
+        <item>1 day</item>
+        <item>3 day</item>
+        <item>1 week</item>
+    </string-array>
+
+    <string-array name="pref_delay_values">
+        <item>10800000</item>
+        <item>21600000</item>
+        <item>43200000</item>
+        <item>86400000</item>
+        <item>259200000</item>
+        <item>604800000</item>
+    </string-array>
+
+    <string name="default_delay">60000</string>
+
+    <color name="colorPrimary">#FA0</color>
+    <color name="colorPrimaryDark">#ffbb7d00</color>
+    <color name="colorAccent">#09A009</color>
 </resources>

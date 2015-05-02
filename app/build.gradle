@@ -5,7 +5,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 20
+    compileSdkVersion 21
     buildToolsVersion "20.0.0"
 
     defaultConfig {
@@ -24,7 +24,9 @@ android {
 }
 
 dependencies {
-    compile 'com.google.android.apps.muzei:muzei-api:+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
+    compile 'com.google.android.apps.muzei:muzei-api:+'
+    compile 'com.android.support:support-v4:22.0.0'
+    compile 'com.android.support:appcompat-v7:21.0.0'
 }

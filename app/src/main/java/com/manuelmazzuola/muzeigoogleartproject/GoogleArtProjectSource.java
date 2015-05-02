@@ -4,6 +4,7 @@ package com.manuelmazzuola.muzeigoogleartproject;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.android.apps.muzei.api.Artwork;
@@ -24,9 +25,8 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
     private static final String TAG = "MuzeiGoogleArtProject";
     private static final String SOURCE_NAME = "GoogleArtProjectSource";
     private static final String SOURCE_JSON = "imax.json";
-    private static final String OLD_IMAGES_KEY = "MuzeiOldImages";
-
-    private static final int ROTATE_TIME_MILLIS = 6 * 60 * 60 * 1000; // 6 hours
+    private static final String OLD_RANDOM_PREF = "muzeigap.oldrandom";
+    private static final String DELAY_PREF = "muzeigap.delay";
 
     public GoogleArtProjectSource() {
         super(SOURCE_NAME);
@@ -43,26 +43,41 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        super.onHandleIntent(intent);
+
+        Object configFreq = intent.getExtras().get("configFreq");
+        if(intent.getExtras().get("configFreq") != null) {
+            unscheduleUpdate();
+            int delayInMillis = Integer.parseInt(configFreq.toString());
+            scheduleUpdate(System.currentTimeMillis() + delayInMillis);
+        }
+    }
+
+
+    @Override
     protected void onTryUpdate(int reason) throws RetryException {
         String currentToken = (getCurrentArtwork() != null) ? getCurrentArtwork().getToken() : null;
         JSONArray arts = loadJSONFromAsset(SOURCE_JSON);
         if(arts == null) return;
 
         // Retrieve old images to be excluded
-        SharedPreferences sharedPref = getSharedPreferences(TAG, 0);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        Set<String> oldIndexes = sharedPref.getStringSet(OLD_IMAGES_KEY, new HashSet<String>());
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = prefs.edit();
+        Set<String> oldIndexes = prefs.getStringSet(OLD_RANDOM_PREF, new HashSet<String>());
 
         if(oldIndexes.size() > (arts.length() / 2)) {
-            oldIndexes = new HashSet<String>();
+            oldIndexes = new HashSet<>();
             Log.d(TAG, "Cleaned old images set");
         }
 
         Random r = new Random();
-        int i1 = getRandomWithExclusion(
-                r,
-                arts.length(),
-                oldIndexes);
+        int i1 = getRandomWithExclusion(r, arts.length(), oldIndexes);
 
         JSONObject randomArt;
         try {
@@ -86,14 +101,16 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
 
             // Save the json position of the selected image
             oldIndexes.add(Integer.toString(i1));
-            editor.putStringSet(OLD_IMAGES_KEY, oldIndexes);
+            editor.putStringSet(OLD_RANDOM_PREF, oldIndexes);
             editor.apply();
         } catch (JSONException ex) {
             Log.e(TAG, ex.getMessage());
             throw new RetryException(ex.getCause());
         }
 
-        scheduleUpdate(System.currentTimeMillis() + ROTATE_TIME_MILLIS);
+        String delayString = prefs.getString(DELAY_PREF, Integer.toString(R.string.default_delay));
+        int delayInMillis = Integer.parseInt(delayString, 10);
+        scheduleUpdate(System.currentTimeMillis() + delayInMillis);
     }
 
     // http://stackoverflow.com/questions/13814503/reading-a-json-file-in-android/13814551#13814551
