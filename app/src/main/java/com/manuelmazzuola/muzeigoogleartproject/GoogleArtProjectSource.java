@@ -17,7 +17,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -70,14 +73,17 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor editor = prefs.edit();
         Set<String> oldIndexes = prefs.getStringSet(OLD_RANDOM_PREF, new HashSet<String>());
+        List<Integer> oldIndexesList = convertSetToList(oldIndexes);
 
-        if(oldIndexes.size() > (arts.length() / 2)) {
-            oldIndexes = new HashSet<>();
-            Log.d(TAG, "Cleaned old images set");
+
+        if(oldIndexesList.size() >= (arts.length() - 2)) {
+            oldIndexesList = new ArrayList<>();
+            Log.d(TAG, "Cleaned old images list");
         }
 
         Random r = new Random();
-        int i1 = getRandomWithExclusion(r, arts.length(), oldIndexes);
+        Collections.sort(oldIndexesList); // ascending order
+        int i1 = getRandomWithExclusion(r, arts.length(), oldIndexesList);
 
         JSONObject randomArt;
         try {
@@ -100,8 +106,8 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
                     .build());
 
             // Save the json position of the selected image
-            oldIndexes.add(Integer.toString(i1));
-            editor.putStringSet(OLD_RANDOM_PREF, oldIndexes);
+            oldIndexesList.add(i1);
+            editor.putStringSet(OLD_RANDOM_PREF,  convertListToSet(oldIndexesList));
             editor.apply();
         } catch (JSONException ex) {
             Log.e(TAG, ex.getMessage());
@@ -111,6 +117,24 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         String delayString = prefs.getString(DELAY_PREF, Integer.toString(R.string.default_delay));
         int delayInMillis = Integer.parseInt(delayString, 10);
         scheduleUpdate(System.currentTimeMillis() + delayInMillis);
+    }
+
+    private Set<String> convertListToSet(List<Integer> oldIndexesList) {
+        Set<String> newSet = new HashSet<>();
+        for(Integer index : oldIndexesList) {
+            newSet.add(Integer.toString(index));
+        }
+
+        return newSet;
+    }
+
+    private List<Integer> convertSetToList(Set<String> oldIndexes) {
+        List<Integer> newList = new ArrayList<>();
+        for(String index : oldIndexes) {
+            newList.add(new Integer(index));
+        }
+
+        return newList;
     }
 
     // http://stackoverflow.com/questions/13814503/reading-a-json-file-in-android/13814551#13814551
@@ -134,10 +158,10 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
 
     }
 
-    private int getRandomWithExclusion(Random rnd, int max, Set<String> exclude) {
+    private int getRandomWithExclusion(Random rnd, int max, List<Integer> exclude) {
         int random = rnd.nextInt(max - exclude.size());
-        for (String ex : exclude) {
-            if (random < Integer.parseInt(ex)) {
+        for (Integer ex : exclude) {
+            if (random < ex) {
                 break;
             }
             random++;
