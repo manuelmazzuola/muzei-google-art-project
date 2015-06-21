@@ -6,6 +6,8 @@
        src="https://developer.android.com/images/brand/en_generic_rgb_wo_45.png" />
 </a>
 
+#### !!! I've added a new branch _wikimedia_ that retrieves images from wikimedia !!!
+
 ## How
 *Google Art Project* does not provide an `API` so I've reverse engineered the [Google Art Project Chrome Extension](https://chrome.google.com/webstore/detail/google-art-project/akimgimeeoiognljlfchpbkpfbmeapkh).
 
