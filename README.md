@@ -7,10 +7,7 @@
 </a>
 
 ## How
-*Google Art Project* does not provide an `API` so I've reverse engineered the [Google Art Project Chrome Extension](https://chrome.google.com/webstore/detail/google-art-project/akimgimeeoiognljlfchpbkpfbmeapkh).
-
-I've discovered that the extension picks a random masterpiece from a [json file](https://github.com/manuelmazzuola/muzei-google-art-project/blob/master/app/src/main/assets/imax.json) that contains an array of objects. Each object contains the masterpiece's informations like the title, author, image url, etc.
-Appending the string `=1200-rw` to each image's url, the image retrieved will be at least large 1200px.
+Retrieve and parse a random page from https://commons.wikimedia.org/wiki/Category:Google_Art_Project
 
 ## Attributions
 This app is based upon *Roman Nurik*'s *Muzei sample source app* and uses the Muzei API.
