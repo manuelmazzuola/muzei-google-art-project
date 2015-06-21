@@ -10,26 +10,21 @@ import android.util.Log;
 import com.google.android.apps.muzei.api.Artwork;
 import com.google.android.apps.muzei.api.RemoteMuzeiArtSource;
 
-import org.apache.http.protocol.HTTP;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+
+//http://tools.wmflabs.org/erwin85/randomarticle.php?lang=&family=commons&categories=Google_Art_Project&namespaces=6&subcats=1&d=10
 
 public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
     private static final String TAG = "MuzeiGoogleArtProject";
     private static final String SOURCE_NAME = "GoogleArtProjectSource";
-    private static final String SOURCE_JSON = "imax.json";
-    private static final String OLD_RANDOM_PREF = "muzeigap.oldrandom";
     private static final String DELAY_PREF = "muzeigap.delay";
+    private static final String WIKIMEDIA_RANDOM_URL =
+            "http://tools.wmflabs.org/erwin85/randomarticle.php?lang=&family=commons&categories=Google_Art_Project&namespaces=6&subcats=1&d=10";
 
     public GoogleArtProjectSource() {
         super(SOURCE_NAME);
@@ -62,55 +57,35 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         }
     }
 
-
     @Override
     protected void onTryUpdate(int reason) throws RetryException {
         String currentToken = (getCurrentArtwork() != null) ? getCurrentArtwork().getToken() : null;
-        JSONArray arts = loadJSONFromAsset(SOURCE_JSON);
-        if(arts == null) return;
-
-        // Retrieve old images to be excluded
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor editor = prefs.edit();
-        Set<String> oldIndexes = prefs.getStringSet(OLD_RANDOM_PREF, new HashSet<String>());
-        List<Integer> oldIndexesList = convertSetToList(oldIndexes);
 
-
-        if(oldIndexesList.size() >= (arts.length() - 2)) {
-            oldIndexesList = new ArrayList<>();
-            Log.d(TAG, "Cleaned old images list");
-        }
-
-        Random r = new Random();
-        Collections.sort(oldIndexesList); // ascending order
-        int i1 = getRandomWithExclusion(r, arts.length(), oldIndexesList);
-
-        JSONObject randomArt;
         try {
-            // Pick a random object
-            randomArt = arts.getJSONObject(i1);
-            // Debug object
-            Log.d(TAG, randomArt.toString());
-            // Appending =s1200 to the path the servers returns a picture no larger than 1200px
-            Uri imageURI = Uri.parse(randomArt.getString("image") + "=s1200");
-            // URI path as an unique id
-            String token = imageURI.getPath();
-            if(token.equals(currentToken)) throw new RetryException();
-                publishArtwork(new Artwork.Builder()
-                    .title(randomArt.getString("title"))
-                    .byline(randomArt.getString("creator"))
-                    .imageUri(imageURI)
-                    .token(token)
-                    .viewIntent(new Intent(Intent.ACTION_VIEW,
-                            Uri.parse("https://www.google.com/culturalinstitute/u/0/" + randomArt.getString("link"))))
-                    .build());
+            Art art = getRandomArtFromWikimedia();
 
-            // Save the json position of the selected image
-            oldIndexesList.add(i1);
-            editor.putStringSet(OLD_RANDOM_PREF,  convertListToSet(oldIndexesList));
-            editor.apply();
-        } catch (JSONException ex) {
-            Log.e(TAG, ex.getMessage());
+            // Debug object
+            Log.d(TAG, art.toString());
+            // URI path as an unique id
+            String token = art.getUrl();
+            if(token.equals(currentToken)) throw new RetryException();
+
+            StringBuilder bylineBuilder = new StringBuilder();
+
+            if(art.getAuthor() != null) bylineBuilder.append(art.getAuthor());
+            if(art.getLocation() != null) bylineBuilder.append(", ").append(art.getLocation());
+            if(art.getDate() != null) bylineBuilder.append(", ").append(art.getDate());
+
+            publishArtwork(new Artwork.Builder()
+                    .title(art.getTitle())
+                    .byline(bylineBuilder.toString())
+                    .imageUri(Uri.parse(art.getUrl()))
+                    .token(token)
+                    .viewIntent(new Intent(Intent.ACTION_VIEW, Uri.parse(art.getDetailsUrl())))
+                    .build());
+        } catch (Exception ex) {
+            Log.d(TAG, null != ex.getMessage() ? ex.getMessage() : "");
             throw new RetryException(ex.getCause());
         }
 
@@ -119,54 +94,72 @@ public class GoogleArtProjectSource extends RemoteMuzeiArtSource {
         scheduleUpdate(System.currentTimeMillis() + delayInMillis);
     }
 
-    private Set<String> convertListToSet(List<Integer> oldIndexesList) {
-        Set<String> newSet = new HashSet<>();
-        for(Integer index : oldIndexesList) {
-            newSet.add(Integer.toString(index));
-        }
-
-        return newSet;
-    }
-
-    private List<Integer> convertSetToList(Set<String> oldIndexes) {
-        List<Integer> newList = new ArrayList<>();
-        for(String index : oldIndexes) {
-            newList.add(new Integer(index));
-        }
-
-        return newList;
-    }
-
-    // http://stackoverflow.com/questions/13814503/reading-a-json-file-in-android/13814551#13814551
-    private JSONArray loadJSONFromAsset(String fileName) {
-        String json;
+    private Art getRandomArtFromWikimedia() throws RetryException {
+        Document page;
         try {
-            InputStream is = getAssets().open(fileName);
-            int size = is.available();
-            byte[] buffer = new byte[size];
-            is.read(buffer);
-            is.close();
-            json = new String(buffer, HTTP.UTF_8);
-            return new JSONArray(json);
-        } catch (JSONException ex) {
-            Log.e(TAG, ex.getMessage());
-            return null;
-        } catch (IOException ex) {
-            Log.e(TAG, ex.getMessage());
-            return null;
+            page = Jsoup.connect(WIKIMEDIA_RANDOM_URL).get();
+        } catch (IOException e) {
+            throw new RetryException(e.getCause());
         }
 
-    }
+        Element body = page.body();
 
-    private int getRandomWithExclusion(Random rnd, int max, List<Integer> exclude) {
-        int random = rnd.nextInt(max - exclude.size());
-        for (Integer ex : exclude) {
-            if (random < ex) {
-                break;
-            }
-            random++;
+        // URL
+        String artUrl;
+        Elements otherResElements = body.getElementsByClass("mw-filepage-other-resolutions");
+        if(otherResElements.size() > 0 && otherResElements.get(0).getElementsByTag("a").size() > 0) {
+            int lastResolution = otherResElements.get(0).getElementsByTag("a").size() - 1;
+            artUrl = otherResElements.get(0).getElementsByTag("a").get(lastResolution).attr("href");
         }
-        return random;
-    }
+        else artUrl = body.getElementById("file").getElementsByTag("a").get(0).attr("href"); // Original resolution
 
+        // AUTHOR
+        String artAuthor;
+        Element authorElement = body.getElementById("fileinfotpl_aut").nextElementSibling();
+        if(authorElement.getElementsByClass("fn").size() > 0)
+            artAuthor = authorElement.getElementsByClass("fn").text();
+        else
+            artAuthor = authorElement.text();
+        if(artAuthor.contains("(")) artAuthor = artAuthor.substring(0, artAuthor.indexOf("("));
+
+        // TITLE
+        String artTitle;
+        Element titleElement = body.getElementById("fileinfotpl_art_title").nextElementSibling();
+        if(titleElement.getElementsByTag("i").size() > 0)
+            artTitle = titleElement.getElementsByTag("i").get(0).html();
+        else
+            artTitle = titleElement.getElementsByClass("fn").text();
+        artTitle = artTitle.replace("&quot;", "\"");
+
+        // DATE
+        Element dateLabelElement = body.getElementById("fileinfotpl_date");
+        String artDate;
+        if(dateLabelElement.nextElementSibling().getElementsByTag("time").size() > 0)
+            artDate = dateLabelElement.nextElementSibling().getElementsByTag("time").get(0).html();
+        else artDate = dateLabelElement.nextElementSibling().text();
+
+        // LOCATION
+        String artLocation;
+        Element locationElement = body.getElementById("fileinfotpl_art_gallery").nextElementSibling();
+        if(locationElement.getElementsByTag("a").size() > 0)
+            artLocation = locationElement.getElementsByTag("a").get(0).text();
+        else
+            artLocation = locationElement.getElementsByClass("description").text();
+
+        // DETAILS
+        String artDetailsUrl = body.getElementById("fileinfotpl_src").parent().getElementsByTag("a").get(0).attr("href");
+
+        // Build art object
+        Art art = new Art();
+        art.setUrl(artUrl);
+        art.setAuthor(artAuthor.trim());
+        art.setTitle(artTitle.trim());
+        art.setDate(artDate);
+        art.setLocation(artLocation.trim());
+        art.setDetailsUrl("https:" + artDetailsUrl);
+
+        Log.d(TAG, art.getDetailsUrl());
+
+        return art;
+    }
 }

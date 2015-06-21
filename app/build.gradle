@@ -12,8 +12,8 @@ android {
         applicationId "com.manuelmazzuola.muzeigoogleartproject"
         minSdkVersion 17
         targetSdkVersion 20
-        versionCode 5
-        versionName "2.3"
+        versionCode 6
+        versionName "2.4"
     }
     buildTypes {
         release {
@@ -29,4 +29,5 @@ dependencies {
     compile 'com.google.android.apps.muzei:muzei-api:+'
     compile 'com.android.support:support-v4:22.0.0'
     compile 'com.android.support:appcompat-v7:21.0.0'
+    compile 'org.jsoup:jsoup:1.7.2'
 }
